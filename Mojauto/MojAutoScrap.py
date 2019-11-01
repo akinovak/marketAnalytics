@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import scrapy, json, re, math
+import scrapy, json, re, math, pymongo
+
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+carDB = myclient["cardb"]
+polovniCollection = carDB["Mojauto"]
 
 class MojAutoScrap(scrapy.Spider):
     name = 'mojauto_scrap'
@@ -11,37 +15,38 @@ class MojAutoScrap(scrapy.Spider):
     def parse(self, response):
         arr_urls = []
         tmpStr = response.css('span.foundAdd span::text').get()
-        print (tmpStr)
+        # print (tmpStr)
         numE = int(re.search('Prikazano 20 od ([0-9]*).([0-9]*)', tmpStr).group(1)) * 1000 + int(re.search('Prikazano 20 od ([0-9]*).([0-9]*)', tmpStr).group(2) if re.search('Prikazano 20 od ([0-9]*).([0-9]*)', tmpStr).group(2) != '' else 0)
-        print ('OGLASA: ' + str(numE))
+        # print ('OGLASA: ' + str(numE))
         numPages = int(math.ceil(numE / 20)) + 1
-        print ('BROJ STRNICA: ' + str(numPages))
+        # print ('BROJ STRNICA: ' + str(numPages))
         for i in range(numPages):
             url = 'https://www.mojauto.rs/rezultat/status/automobili/vozilo_je/polovan/poredjaj-po/oglas_najnoviji/po_stranici/20/prikazi_kao/lista/stranica/' + str(i + 1)
             arr_urls.append(url)
             yield scrapy.Request(response.urljoin(url), callback=self.parse_page)
 
-        print (arr_urls)
-        print ('****************************************************************************************')
+        # print (arr_urls)
+        # print ('****************************************************************************************')
 
     def parse_page(self, response):
         carUrls = response.css('a.addTitle::attr(href)').getall()
         carUrls = map(lambda x: 'https://www.mojauto.rs' + x, carUrls)
-        print ('****************************************************************************************')
-        print (len(carUrls))
+        # print ('****************************************************************************************')
+        # print (len(carUrls))
         for url in carUrls:
             yield scrapy.Request(response.urljoin(url), callback=self.parse_car)
 
     def parse_car(self, response):
-        print ('****************************************************************************************')
+        # print ('****************************************************************************************')
         sec = response.css('div.breadcrumb ol li span::text').getall()
-        print (sec)
-        print (response.url)
+        # print (sec)
+        # print (response.url)
         x = {}
         x['Marka'] = sec[2].encode('utf-8')
-        x['Model'] = sec[3].encode('utf-8')
+        if len(sec) > 3:
+            x['Model'] = sec[3].encode('utf-8')
         price = response.css('span.priceReal::text').get()
-        print (price)
+        # print (price)
         price1 = re.search('([0-9]*)\.?[0-9]*', price)
         price2 = re.search('[0-9]*\.([0-9]*)', price)
         if price1 != None:
@@ -58,28 +63,49 @@ class MojAutoScrap(scrapy.Spider):
         
         optionList = response.css('div.sidePanel ul.basicSingleData li:not([class*="c_phone"]) span::text').getall()
         x['Godiste'] = int(re.search('([0-9]*).', optionList[0]).group(1))
-        x['Gorivo'] = optionList[5]
+        if len(optionList) > 5:
+            x['Gorivo'] = optionList[5]
         genList = response.css('div.singleBox ul:not([class*="fixed"]) li strong::text').getall()
+        genKey = response.css('div.singleBox ul:not([class*="fixed"]) li span::text').getall()
+        for i in range(len(genKey)):
+            if len(genList) >= i:
+                if(genKey[i] == u'Kubikaža'):
+                    x['Kubikaza'] = int(re.search('([0-9]*) cm', genList[i]).group(1))
+                elif genKey[i] == 'Snaga':
+                    x['Snaga motora'] = int(re.search('([0-9]*) KS', genList[i]).group(1))
+                elif genKey[i] == u'Prešao kilometara':
+                    x['Kilometraza'] = int(genList[i])
+                elif genKey[i] == 'Kategorija':
+                    x['Karoserija'] = genList[i]
+                else:
+                    x[genKey[i]] = genList[i]
         
-        cub = re.search('([0-9]*) cm', genList[0])
-        if cub != None:
-            x['Kubikaza'] = int(cub.group(1))
+       
+
+        # cub = re.search('([0-9]*) cm', genList[0])
+        # if cub != None:
+        #     x['Kubikaza'] = int(cub.group(1))
         
-        power = re.search('([0-9]*) KS', genList[1])
-        if power != None:
-            x['Snaga motora'] = int(power.group(1))
+        # power = re.search('([0-9]*) KS', genList[1])
+        # if power != None:
+        #     x['Snaga motora'] = int(power.group(1))
         
-        km = re.search('([0-9]+)', genList[2])
-        if km != None:
-            x['Kilometraza'] = int(km.group(1))
+        # km = re.search('([0-9]+)', genList[2])
+        # if km != None:
+        #     x['Kilometraza'] = int(km.group(1))
         
-        x['Karoserija'] = genList[(-1)]
+        # x['Karoserija'] = genList[(-1)]
         x['logo'] = 'https://www.mojauto.rs/resources/images/logo-redesign.png'
         x['link'] = response.url
         x['Postoji'] = True
-        x['slika'] = 'https://www.mojauto.rs' + response.css('a[id="advertThumb_0"] img::attr(src)').get()
-        print (genList)
-        print (x)
-        f = open('test.txt', 'a+')
-        f.write(json.dumps(x) + '\n')
-        f.close()
+        pic = response.css('a[id="advertThumb_0"] img::attr(src)').get()
+        if pic != None:
+            x['slika'] = 'https://www.mojauto.rs' + pic
+
+        xInsert = polovniCollection.insert_one(x)
+        print(xInsert)
+        # print (genList)
+        # print (x)
+        # f = open('test.txt', 'a+')
+        # f.write(json.dumps(x) + '\n')
+        # f.close()

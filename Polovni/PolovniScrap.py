@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import scrapy, json, re, math, codecs
+import scrapy, json, re, math, codecs, pymongo
+
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+carDB = myclient["cardb"]
+polovniCollection = carDB["Polovni"]
 
 class PolovniScrap(scrapy.Spider):
     name = 'polovni_scrap'
@@ -11,9 +15,9 @@ class PolovniScrap(scrapy.Spider):
         arr_urls = []
         tmpStr = response.css('div.js-hide-on-filter small::text').get()
         numE = int(re.search('Prikazano od 1 do 25 oglasa od ukupno ([0-9]*)', tmpStr).group(1))
-        print("OGLASA: " + str(numE))
+        # print("OGLASA: " + str(numE))
         numPages = int(math.ceil(numE/25))
-        print("BROJ STRNICA: " + str(numPages))
+        # print("BROJ STRNICA: " + str(numPages))
         
         for i in range(numPages):
             url = 'https://www.polovniautomobili.com/auto-oglasi/pretraga?page='+ str(i+1) +'&sort=basic&city_distance=0&showOldNew=all&without_price=1'
@@ -26,13 +30,13 @@ class PolovniScrap(scrapy.Spider):
     def parse_page(self, response):
         carUrls = response.css('article.single-classified:not([class*="uk-hidden"]):not([class*="paid-0"]) h2 a::attr(href)').getall()
         carUrls = map(lambda x: 'https://www.polovniautomobili.com' + x, carUrls)
-        print(len(carUrls))
+        # print(len(carUrls))
         for url in carUrls:
             yield scrapy.Request(
                 response.urljoin(url),
                 callback=self.parse_car
-            )
-        
+            ) 
+    
     def parse_car(self, response):
         
         sec = response.css('section.classified-content div::text').getall()
@@ -108,7 +112,7 @@ class PolovniScrap(scrapy.Spider):
         if(price == "Po dogovoru"):
             price = -1
         else:
-            print(response.url)
+            # print(response.url)
             first = re.search('([0-9]*)\.?[0-9]*', price)
             second = re.search('[0-9]*\.([0-9]*)', price)
             if(second == None):
@@ -117,9 +121,9 @@ class PolovniScrap(scrapy.Spider):
                 price = int(first.group(1))*1000 + int(second.group(1))
         
         x['Cena'] = price
-
+        xInsert = polovniCollection.insert_one(x)
+        print(xInsert)
         # print(picture)
-        f = open("test.txt", "a+",)
-        f.write(json.dumps(x) + '\n')
-        f.close()
-         
+        # f = open("test.txt", "a+",)
+        # f.write(json.dumps(x) + '\n')
+        # f.close()
