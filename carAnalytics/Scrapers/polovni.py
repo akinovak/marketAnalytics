@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import scrapy, json, re, math, codecs, pymongo, datetime, time
+import scrapy, json, re, math, codecs, pymongo, datetime, time, sys
+
 from dbServices import updateService
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 carDB = myclient["carDB"]
-polovniCollection = carDB["polovniautomobilis"]
+polovniCollection = carDB["polovniautomobili"]
 
 
 class PolovniScrap(scrapy.Spider):
@@ -23,7 +24,7 @@ class PolovniScrap(scrapy.Spider):
         numPages = int(math.ceil(numE / 25))
         # print("BROJ STRNICA: " + str(numPages))
 
-        for i in range(numPages):
+        for i in range(1):#range(numPages):
             url = 'https://www.polovniautomobili.com/auto-oglasi/pretraga?page=' + str(
                 i + 1) + '&sort=basic&city_distance=0&showOldNew=all&without_price=1'
             arr_urls.append(url)
@@ -73,11 +74,11 @@ class PolovniScrap(scrapy.Spider):
         if exists:
             return
 
-        sec = response.css('section.classified-content div::text').getall()
+        sec = response.css('section.classified-content div div::text').getall()
         arr = []
         for s in sec:
-            w = s.encode('utf-8').strip()
-            if w != '':
+            w = s.strip()
+            if w != '' and '\n' not in w and '\t' not in w:
                 arr.append(w)
 
         keys = []
@@ -94,6 +95,7 @@ class PolovniScrap(scrapy.Spider):
 
         for i in range(len(keys)):
             if (i < len(vals)):
+                print(keys[i])
                 if (keys[i] == "Godište"):
                     since = re.search('([0-9]*).', vals[i])
                     if (since != None):

@@ -27,5 +27,5 @@ def _crawl(spider):
 process = CrawlerProcess(get_project_settings())
 
 _crawl(polovni.PolovniScrap)
-_crawl(mojauto.MojAutoScrap)
+# _crawl(mojauto.MojAutoScrap)
 process.start()

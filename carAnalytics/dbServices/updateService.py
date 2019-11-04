@@ -3,7 +3,7 @@ import pymongo
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 carDB = myclient["carDB"]
-polovniCollection = carDB["polovniautomobilis"]
+polovniCollection = carDB["polovniautomobili"]
 mojautoCollection = carDB["mojauto"]
 
 
@@ -19,8 +19,9 @@ def update(link, price, collection):
     if car:
         ts = time.gmtime()
         ts = time.strftime("%Y-%m-%d", ts)
-        car.cena = price
-        car.istorija.append({ts: price})
+        car['cena'] = price
+        car['istorija'].append({ts: price})
+        collection.update_one({'_id': car['_id']}, {"$set": {'cena': price, 'istorija': car['istorija']}})
         return True
     else:
         return False
