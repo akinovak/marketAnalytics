@@ -10,7 +10,7 @@ except:
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 carDB = myclient["carDB"]
-polovniCollection = carDB["polovniautomobilis"]
+polovniCollection = carDB["polovniautomobili"]
 mojautoCollection = carDB["mojauto"]
 soldCars = carDB["sold"]
 
