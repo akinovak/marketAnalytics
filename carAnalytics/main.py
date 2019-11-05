@@ -6,7 +6,7 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
 
-def sleep(self, *args, seconds):
+def sleep(*args, seconds):
     """Non blocking sleep callback"""
     return deferLater(reactor, seconds, lambda: None)
 
