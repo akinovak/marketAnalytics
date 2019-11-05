@@ -57,7 +57,7 @@ def _sold(document):
 
 def _loop(collection):
     for document in collection.find():
-        r = requests.get(document.link)
+        r = requests.get(document['link'])
 
         if r.status_code != 200:
             # Samo da odradim da li ima internet nas server i da li je aktivan sajt
