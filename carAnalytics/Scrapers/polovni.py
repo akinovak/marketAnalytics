@@ -24,7 +24,7 @@ class PolovniScrap(scrapy.Spider):
         numPages = int(math.ceil(numE / 25))
         # print("BROJ STRNICA: " + str(numPages))
 
-        for i in range(1):#range(numPages):
+        for i in range(numPages):
             url = 'https://www.polovniautomobili.com/auto-oglasi/pretraga?page=' + str(
                 i + 1) + '&sort=basic&city_distance=0&showOldNew=all&without_price=1'
             arr_urls.append(url)
@@ -95,7 +95,7 @@ class PolovniScrap(scrapy.Spider):
 
         for i in range(len(keys)):
             if (i < len(vals)):
-                print(keys[i])
+                # print(keys[i])
                 if (keys[i] == "Godište"):
                     since = re.search('([0-9]*).', vals[i])
                     if (since != None):
@@ -157,5 +157,14 @@ class PolovniScrap(scrapy.Spider):
         ts = time.strftime("%Y-%m-%d", ts)
         x['cena'] = price
         x['istorija'] = [{ts: price}]
+        x['mesto'] = response.css('aside.table-cell section.uk-grid div div div.uk-width-1-2::text').get().strip()
+        
+        if x['mesto'] == '' :
+            x['mesto'] = response.css('aside.table-cell section.uk-grid div div div div::text').get().strip()
+        
+        if x['mesto'] == '' :
+            x['mesto'] = response.css('aside.table-cell section.uk-grid div div::text').get().strip()
+        
+
         xInsert = polovniCollection.insert_one(x)
-        print(x)
+        

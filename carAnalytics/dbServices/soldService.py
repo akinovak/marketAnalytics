@@ -71,4 +71,4 @@ mycollections = [polovniCollection, mojautoCollection]
 while True:
     for collection in mycollections:
         _loop(collection)
-    time.sleep(3600*60)
+    time.sleep(3600*5)

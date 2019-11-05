@@ -19,7 +19,7 @@ def crash(failure):
 def _crawl(spider):
     deferred = process.crawl(spider)
     deferred.addErrback(crash)  # <-- add errback here
-    deferred.addCallback(sleep, seconds=3600*60)
+    deferred.addCallback(sleep, seconds=3600*5)
     deferred.addCallback(_crawl, spider)
     return deferred
 
