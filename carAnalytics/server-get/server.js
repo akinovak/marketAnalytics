@@ -19,7 +19,7 @@ app.use(methodOverride())
 let dbCar
 MongoClient.connect("mongodb://localhost:27017/", { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
   if (err) throw err
-  dbCar = db.db("testServerCarDb")
+  dbCar = db.db("carDB")
 })
 
 app.post('/getavgprice', (req, res) => {
