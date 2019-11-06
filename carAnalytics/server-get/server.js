@@ -25,6 +25,8 @@ MongoClient.connect("mongodb://localhost:27017/", { useNewUrlParser: true, useUn
 app.post('/getavgprice', (req, res) => {
     let make = req.body.make
     let model = req.body.model
+    console.log("Hit")
+    console.log(req.body)
     dbCar.collection('polovni').aggregate([
             {$match: {Marka: make, Model: model}}
         , {$group:
@@ -40,6 +42,8 @@ app.post('/getavgpricebykm', (req, res) => {
     let make = req.body.make
     let model = req.body.model
     let km = req.body.km
+    console.log("Hit")
+    console.log(req.body)
     dbCar.collection('polovni').aggregate([
             {$match: {Marka: make, Model: model, Kilometraza: {$lte:km+10000, $gte:km-10000}}}
         , {$group:
