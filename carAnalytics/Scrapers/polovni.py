@@ -53,7 +53,7 @@ class PolovniScrap(scrapy.Spider):
             price = re.search(r'([0-9]*\.?[0-9]*)€', price).group(1)
 
         price = price.strip()
-        if (price == "Po dogovoru"):
+        if not (price.isdigit()) :
             price = -1
         else:
             # print(response.url)
@@ -91,7 +91,7 @@ class PolovniScrap(scrapy.Spider):
 
         x = {}
 
-        err = open("err.txt", "w+", )
+        
 
         for i in range(len(keys)):
             if (i < len(vals)):
@@ -100,14 +100,14 @@ class PolovniScrap(scrapy.Spider):
                     since = re.search('([0-9]*).', vals[i])
                     if (since != None):
                         x["Godiste"] = int(since.group(1))
-                    else:
-                        err.write(keys[i] + ' ' + vals[i])
+                    # else:
+                        # err.write(keys[i] + ' ' + vals[i])
                 elif (keys[i] == "Kubikaža"):
                     cub = re.search('([0-9]*) cm', vals[i])
                     if (cub != None):
                         x["Kubikaza"] = int(cub.group(1))
-                    else:
-                        err.write(keys[i] + ' ' + vals[i])
+                    # else:
+                    #     err.write(keys[i] + ' ' + vals[i])
                 elif (keys[i] == "Kilometraža"):
                     km1 = re.search('([0-9]*)\.?[0-9]* km', vals[i])
                     km2 = re.search('[0-9]*\.([0-9]*) km', vals[i])
@@ -116,19 +116,19 @@ class PolovniScrap(scrapy.Spider):
                             x["Kilometraza"] = int(km1.group(1)) * 1000 + int(km2.group(1))
                         else:
                             x["Kilometraza"] = int(km1.group(1))
-                    else:
-                        err.write(keys[i] + ' ' + vals[i])
+                    # else:
+                    #     err.write(keys[i] + ' ' + vals[i])
                     # x["Kilometraza"] = (int(re.search('([0-9]*).([0-9]*) km',vals[i]).group(1)) * (1000 if re.search('([0-9]*).([0-9]*) km',vals[i]).group(2) != '' else 1) + int(re.search('([0-9]*).([0-9]*) km',vals[i]).group(2) if re.search('([0-9]*).([0-9]*) km',vals[i]).group(2) != '' else 0) ) if vals[i] != '' else 0
                 elif (keys[i] == "Snaga motora"):
                     power = re.search('([0-9]*)\/([0-9]*) \(kW\/KS\)', vals[i])
                     if (power != None):
                         x["Snaga motora"] = int(power.group(2))
-                    else:
-                        err.write(keys[i] + ' ' + vals[i])
+                    # else:
+                    #     err.write(keys[i] + ' ' + vals[i])
                 else:
                     x[keys[i]] = vals[i]
 
-        err.close()
+        
         x['Postoji'] = True
         x['link'] = response.url
         x['logo'] = 'https://www.polovniautomobili.com/bundles/site/images/polovniautomobili-logo.svg'
@@ -165,6 +165,10 @@ class PolovniScrap(scrapy.Spider):
         if x['mesto'] == '' :
             x['mesto'] = response.css('aside.table-cell section.uk-grid div div::text').get().strip()
         
-
-        xInsert = polovniCollection.insert_one(x)
+        try:
+            xInsert = polovniCollection.insert_one(x)
+        except Exception as e:
+            err = open("err.txt", "a+")
+            err.write("Unexpected error:", e)
+            err.close()
         

@@ -52,23 +52,30 @@ def _sold(document):
     ts = time.gmtime()
     ts = time.strftime("%Y-%m-%d", ts)
     document["sell_date"] = ts
+    print(document)
     soldCars.insert_one(document)
 
 
 def _loop(collection):
+    
     for document in collection.find():
         r = requests.get(document['link'])
-
-        if r.status_code != 200:
+        
+        if(r.status_code >= 500):
+            time.sleep(600)
+        
+        if (r.url != document['link'] and r.status_code == 200) or r.status_code != 200:
             # Samo da odradim da li ima internet nas server i da li je aktivan sajt
             collection.delete_one(document)
             _sold(document)
 
 
-mycollections = [polovniCollection, mojautoCollection]
+mycollections = [polovniCollection]
 
 
 while True:
+    print('New start')
     for collection in mycollections:
         _loop(collection)
+    print()
     time.sleep(3600*5)
