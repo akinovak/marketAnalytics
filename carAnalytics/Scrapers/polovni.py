@@ -164,6 +164,11 @@ class PolovniScrap(scrapy.Spider):
         
         if x['mesto'] == '' :
             x['mesto'] = response.css('aside.table-cell section.uk-grid div div::text').get().strip()
+
+
+        if x['mesto'] == '' :
+            x['mesto'] = response.css('aside.table-cell section.uk-grid div div.uk-margin-top-remove div.uk-width-1-2::text').get().strip()
+        
         
         try:
             xInsert = polovniCollection.insert_one(x)
